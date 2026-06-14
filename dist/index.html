@@ -248,9 +248,9 @@
         }
 
         .palette-color {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 3px;
         }
 
             .palette-color .palette-swatch {
@@ -1355,7 +1355,24 @@ class FullPropertyEditor {
   createEditor(key) {
     if (key === "color") {
       const editor = new ColorEditor;
-      const palette = ["#ff0000", "#00ff00", "#0000ff"];
+      const palette = [
+        "#1e293b",
+        "#64748b",
+        "#cbd5e1",
+        "#f8fafc",
+        "#ff6b6b",
+        "#f4a261",
+        "#ffd166",
+        "#f3c68f",
+        "#06d6a0",
+        "#4ea8de",
+        "#560bad",
+        "#b5179e",
+        "#2a9d8f",
+        "#a8dadc",
+        "#e29578",
+        "#eddcd2"
+      ];
       editor.setPalette(palette);
       return editor;
     } else if (key === "thickness") {
