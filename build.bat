@@ -1,0 +1,1 @@
+bun build --compile --target=browser ./index.html --outdir=dist

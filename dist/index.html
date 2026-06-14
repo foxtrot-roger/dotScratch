@@ -1,0 +1,1591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dotScratch Application</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #f4f6f9;
+            color: #333;
+            overflow: hidden;
+        }
+
+        /* Top Row Controls */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #ffffff;
+            padding: 0 20px;
+            height: 60px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            z-index: 10;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #888;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+
+        .thickness-btn {
+            background: #f0f2f5;
+            border: 2px solid transparent;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .thickness-btn:hover {
+                background: #e4e6e9;
+            }
+
+            .thickness-btn.active {
+                background: #e8f0fe;
+                border-color: #1a73e8;
+                color: #1a73e8;
+            }
+
+        .color-swatch {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid #ffffff;
+            cursor: pointer;
+            box-shadow: 0 0 0 1px #dcdfe6;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+            .color-swatch:hover {
+                transform: scale(1.1);
+            }
+
+            .color-swatch.active {
+                box-shadow: 0 0 0 2px #1a73e8;
+                transform: scale(1.05);
+            }
+
+        /* Main App Workspace Layout */
+        .main-container {
+            display: flex;
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Expandable Sidebar Menu */
+        .sidebar {
+            width: 280px;
+            background-color: #ffffff;
+            border-right: 1px solid #e0e4ec;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 5;
+        }
+
+            .sidebar.collapsed {
+                margin-left: -280px;
+            }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e4ec;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+            .sidebar-header h2 {
+                font-size: 16px;
+                font-weight: 600;
+            }
+
+        .btn-new-sketch {
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 13px;
+            transition: background 0.2s ease;
+        }
+
+            .btn-new-sketch:hover {
+                background-color: #1557b0;
+            }
+
+        .sketch-list-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .sketch-item {
+            padding: 12px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-bottom: 4px;
+            font-size: 14px;
+            transition: background 0.2s ease;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+            .sketch-item:hover {
+                background-color: #f1f3f4;
+            }
+
+            .sketch-item.active {
+                background-color: #e8f0fe;
+                color: #1a73e8;
+                font-weight: 500;
+            }
+
+        /* Toggle Button Hooked Adjacent to Sidebar */
+        .sidebar-toggle {
+            position: absolute;
+            left: 280px;
+            top: 15px;
+            z-index: 6;
+            background: #ffffff;
+            border: 1px solid #e0e4ec;
+            border-left: none;
+            border-radius: 0 6px 6px 0;
+            padding: 10px 8px;
+            cursor: pointer;
+            box-shadow: 2px 2px 6px rgba(0,0,0,0.04);
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: bold;
+        }
+
+        .sidebar.collapsed + .sidebar-toggle {
+            left: 0;
+        }
+
+        /* Right Canvas Sandbox Pane */
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            background-color: #f8f9fa;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            touch-action: none; /* Prevents default browser panning/zooming over the workspace canvas */
+        }
+
+        .canvas-stats {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: #666;
+            backdrop-filter: blur(4px);
+            pointer-events: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+
+
+        /* my styling here */
+
+        :root {
+            --selected-background: #e8f0fe;
+            --selected-border: #1a73e8;
+            --hover-background: #f1f5fd;
+            --hover-border: #7baaf7;
+        }
+
+        .active {
+            background: var(--selected-background);
+            border: 1px solid var(--selected-border);
+            color: #1a73e8;
+            border-radius: 5px;
+        }
+
+        .palette-swatch {
+            min-width: 40px;
+            min-height: 40px;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .palette-color {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+            .palette-color .palette-swatch {
+                border-radius: 20px;
+                border: 8px solid white;
+            }
+
+                .palette-color .palette-swatch:hover {
+                    border-radius: 20px;
+                    color: inherit;
+                    border: 4px solid white;
+                }
+
+                .palette-color .palette-swatch.active {
+                    border-radius: 20px;
+                    color: inherit;
+                    border: 4px solid var(--selected-background);
+                    outline: 2px solid #1a73e8;
+                }
+
+        .palette-thickness {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+            .palette-thickness .palette-swatch {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 4px;
+            }
+
+                .palette-thickness .palette-swatch:hover {
+                    background: var(--hover-background);
+                    border: 1px solid var(--hover-border);
+                }
+
+                .palette-thickness .palette-swatch.active {
+                    background: var(--selected-background);
+                    border: 1px solid var(--selected-border);
+                }
+
+        .tool-quickedit {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+        }
+            .tool-quickedit .property-editor {
+                display: flex;
+                flex-direction: row;
+            }
+
+        .tool-fulledit {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+            .tool-fulledit .property-editor {
+                display:flex;
+                flex-direction:column;
+            }
+
+            .tool-fulledit label {
+                font-weight: bold;
+                display: block;
+                margin-bottom: 5px;
+            }
+    </style>
+</head>
+<body>
+
+    <div id="wip">
+    </div>
+
+    <div class="top-bar">
+    </div>
+
+    <div class="main-container">
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2>Sketches</h2>
+                <button class="btn-new-sketch" id="btn-add-sketch">+ New</button>
+            </div>
+            <div class="sketch-list-container" id="sketch-list">
+            </div>
+        </div>
+
+        <button class="sidebar-toggle" id="sidebar-toggle">⟨</button>
+
+        <div class="canvas-container">
+            <canvas id="sketchCanvas"></canvas>
+            <div class="canvas-stats" id="canvas-stats">Zoom: 100%</div>
+        </div>
+    </div>
+
+    
+
+<script type="module">// src/MyIndexedDb.ts
+class MyIndexedDb {
+  static CURRENT_VERSION = 9;
+  static DATABASE_NAME = "dotScratch";
+  static DB_SCHEMA = {
+    sketches: "id",
+    thicknesses: "thickness",
+    colors: "color",
+    color_presets: "value",
+    color_history: "value",
+    thickness_presets: "value",
+    thickness_history: "value",
+    picker_data: "id"
+  };
+  static db = null;
+  static initialize() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(MyIndexedDb.DATABASE_NAME, MyIndexedDb.CURRENT_VERSION);
+      request.onupgradeneeded = function(e) {
+        const target = e.target;
+        const upgradeDb = target.result;
+        for (const tableName in MyIndexedDb.DB_SCHEMA) {
+          if (MyIndexedDb.DB_SCHEMA.hasOwnProperty(tableName)) {
+            const keyPathName = MyIndexedDb.DB_SCHEMA[tableName];
+            if (!upgradeDb.objectStoreNames.contains(tableName)) {
+              console.log(`Creating store ${tableName} with key: ${keyPathName}`);
+              upgradeDb.createObjectStore(tableName, { keyPath: keyPathName });
+            }
+          }
+        }
+      };
+      request.onsuccess = (e) => {
+        const target = e.target;
+        MyIndexedDb.db = target.result;
+        resolve(MyIndexedDb.db);
+      };
+      request.onerror = (e) => {
+        const target = e.target;
+        reject("DB Error: " + target.error?.name);
+      };
+    });
+  }
+  static set(collectionName, value) {
+    return new Promise((resolve, reject) => {
+      if (!MyIndexedDb.db)
+        return reject("Database not initialized. Call initialize() first.");
+      const transaction = MyIndexedDb.db.transaction(collectionName, "readwrite");
+      transaction.onerror = () => reject(transaction.error);
+      transaction.oncomplete = () => resolve();
+      const store = transaction.objectStore(collectionName);
+      store.put(value);
+    });
+  }
+  static get(collectionName, id) {
+    return new Promise((resolve, reject) => {
+      if (!MyIndexedDb.db)
+        return reject("Database not initialized. Call initialize() first.");
+      const transaction = MyIndexedDb.db.transaction(collectionName, "readonly");
+      transaction.onerror = () => reject(transaction.error);
+      const store = transaction.objectStore(collectionName);
+      const request = store.get(id);
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+    });
+  }
+  static getAll(collectionName) {
+    return new Promise((resolve, reject) => {
+      if (!MyIndexedDb.db)
+        return reject("Database not initialized. Call initialize() first.");
+      const transaction = MyIndexedDb.db.transaction(collectionName, "readonly");
+      transaction.onerror = () => reject(transaction.error);
+      const collection = transaction.objectStore(collectionName);
+      const request = collection.getAll();
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+    });
+  }
+  static filterAll(collectionName, filterCallback) {
+    return new Promise((resolve, reject) => {
+      if (!MyIndexedDb.db)
+        return reject("Database not initialized. Call initialize() first.");
+      const transaction = MyIndexedDb.db.transaction(collectionName, "readonly");
+      transaction.onerror = () => reject(transaction.error);
+      const store = transaction.objectStore(collectionName);
+      const results = [];
+      const request = store.openCursor();
+      request.onerror = () => reject(request.error);
+      request.onsuccess = (e) => {
+        const target = e.target;
+        const cursor = target.result;
+        if (cursor) {
+          const value = cursor.value;
+          if (filterCallback(value)) {
+            results.push(value);
+          }
+          cursor.continue();
+        } else {
+          resolve(results);
+        }
+      };
+    });
+  }
+  static delete(collectionName, id) {
+    return new Promise((resolve, reject) => {
+      if (!MyIndexedDb.db)
+        return reject("Database not initialized. Call initialize() first.");
+      const tx = MyIndexedDb.db.transaction(collectionName, "readwrite");
+      tx.objectStore(collectionName).delete(id);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+}
+
+// src/bindings.ts
+class Observable {
+  instance;
+  bindings = [];
+  constructor(instance) {
+    this.instance = instance;
+  }
+  set(propertyName, value) {
+    this.instance[propertyName] = value;
+    Promise.all(this.bindings.map((editor) => editor.onPropertyChanged(this, propertyName))).catch((err) => console.error("Failed to refresh one or more editors:", err));
+  }
+  get(propertyName) {
+    return this.instance[propertyName];
+  }
+  bind(binding) {
+    if (!this.bindings.includes(binding)) {
+      this.bindings.push(binding);
+    }
+  }
+  unbind(binding) {
+    this.bindings = this.bindings.filter((b) => b !== binding);
+  }
+}
+
+class BindingTwoWay {
+  source;
+  sourceProperty;
+  target;
+  targetProperty;
+  sourceBinding;
+  targetBinding;
+  constructor(source, sourceProperty, target, targetProperty) {
+    this.source = source;
+    this.sourceProperty = sourceProperty;
+    this.target = target;
+    this.targetProperty = targetProperty;
+    this.sourceBinding = new BindingOneWay(source, sourceProperty, target, targetProperty);
+    this.targetBinding = new BindingOneWay(target, targetProperty, source, sourceProperty);
+  }
+  bind() {
+    this.sourceBinding.bind();
+    this.targetBinding.bind();
+  }
+  unbind() {
+    this.sourceBinding.unbind();
+    this.targetBinding.unbind();
+  }
+}
+
+class BindingOneWay {
+  source;
+  sourceProperty;
+  target;
+  targetProperty;
+  constructor(source, sourceProperty, target, targetProperty) {
+    this.source = source;
+    this.sourceProperty = sourceProperty;
+    this.target = target;
+    this.targetProperty = targetProperty;
+  }
+  async onPropertyChanged(instance, propertyName) {
+    if (instance === this.source && propertyName === this.sourceProperty) {
+      const newValue = this.source.get(this.sourceProperty);
+      if (this.target.get(this.targetProperty) !== newValue) {
+        this.target.set(this.targetProperty, newValue);
+      }
+    }
+  }
+  bind() {
+    this.source.bind(this);
+    const initialValue = this.source.get(this.sourceProperty);
+    this.target.set(this.targetProperty, initialValue);
+  }
+  unbind() {
+    this.source.unbind(this);
+  }
+}
+
+class Editable extends Observable {
+  editors = {};
+  constructor(instance) {
+    super(instance);
+  }
+  getEditor(propertyName) {
+    return this.editors[propertyName];
+  }
+  setEditor(propertyName, editor) {
+    this.editors[propertyName] = editor;
+  }
+}
+
+// src/Pencil.ts
+class Pencil {
+  name = "pencil";
+  icon = "✏️";
+  editable;
+  properties = { color: "#000000", thickness: 5 };
+  quickProperties = ["color", "thickness"];
+  constructor() {
+    this.editable = new Editable(this.properties);
+    this.editable.setEditor("color", "color");
+    this.editable.setEditor("thickness", "thickness");
+  }
+  async render(properties, canvas, line) {
+    if (line.points.length === 0)
+      return;
+    const ctx = canvas.getContext();
+    if (!ctx)
+      return;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    if (line.points.length === 1) {
+      const p = canvas.worldToCanvas(line.points[0]);
+      const radius = properties.thickness * canvas.getScale() * (line.points[0].pressure ?? 0.5) / 2;
+      ctx.fillStyle = properties.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, Math.max(0.5, radius), 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.strokeStyle = properties.color;
+      for (let i = 1;i < line.points.length; i++) {
+        const p1 = canvas.worldToCanvas(line.points[i - 1]);
+        const p2 = canvas.worldToCanvas(line.points[i]);
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        const computedPressure = line.points[i].pressure !== undefined ? line.points[i].pressure : 0.5;
+        ctx.lineWidth = Math.max(0.5, properties.thickness * canvas.getScale() * computedPressure);
+        ctx.stroke();
+      }
+    }
+  }
+  pointerDown(canvas, sketch, point, event) {
+    const newLine = {
+      tool: this.name,
+      properties: { ...this.properties },
+      points: [point]
+    };
+    sketch.lines.push(newLine);
+  }
+  pointerMove(canvas, sketch, point, event) {
+    if (sketch.lines.length === 0)
+      return;
+    if (!canvas.getIsDrawing())
+      return;
+    const currentLine = sketch.lines[sketch.lines.length - 1];
+    currentLine.points.push(point);
+  }
+  pointerUp(canvas, sketch, point, event) {
+    if (sketch.lines.length === 0)
+      return;
+    const currentLine = sketch.lines[sketch.lines.length - 1];
+    currentLine.points.push(point);
+  }
+}
+
+// src/MyCanvas.ts
+class SketchCanvas {
+  canvas;
+  ctx;
+  scale = 1;
+  offsetX = 0;
+  offsetY = 0;
+  tools;
+  activeTool = null;
+  selectedColor = "#000000";
+  selectedThickness = 2;
+  isEraserMode = false;
+  fingerDrawEnabled = false;
+  isDrawing = false;
+  isPanning = false;
+  isFingerPanning = false;
+  startX = 0;
+  startY = 0;
+  fStartX = 0;
+  fStartY = 0;
+  activePointers = [];
+  initialDist = 0;
+  initialScale = 1;
+  initialWorldMid = { x: 0, y: 0 };
+  currentSketchData;
+  onSaveCallback;
+  constructor(canvasElement, tools, onSave) {
+    this.canvas = canvasElement;
+    const context = this.canvas.getContext("2d");
+    if (!context) {
+      throw new Error("Could not obtain 2D rendering context from canvas.");
+    }
+    this.ctx = context;
+    this.onSaveCallback = onSave;
+    this.tools = tools;
+    if (tools && tools.length > 0) {
+      this.activeTool = tools[0];
+    } else {
+      this.activeTool = new Pencil;
+    }
+    this.initDefaultLifeCycle();
+  }
+  getContext() {
+    return this.ctx;
+  }
+  getScale() {
+    return this.scale;
+  }
+  setIsDrawing(isDrawing) {
+    this.isDrawing = isDrawing;
+  }
+  getIsDrawing() {
+    return this.isDrawing;
+  }
+  initDefaultLifeCycle() {
+    this.setupPointerEvents();
+    window.addEventListener("resize", () => this.resizeCanvas());
+    this.resizeCanvas();
+  }
+  getToolProperties() {
+    if (!this.activeTool) {
+      return { color: "#000000", thickness: 2, isEraserMode: false };
+    }
+    return {
+      ...this.activeTool.properties,
+      isEraserMode: this.isEraserMode
+    };
+  }
+  screenToWorld(x, y) {
+    const rect = this.canvas.getBoundingClientRect();
+    const canvasX = x - rect.left;
+    const canvasY = y - rect.top;
+    return {
+      x: (canvasX - this.offsetX) / this.scale,
+      y: (canvasY - this.offsetY) / this.scale
+    };
+  }
+  worldToCanvas(position) {
+    return {
+      x: position.x * this.scale + this.offsetX,
+      y: position.y * this.scale + this.offsetY
+    };
+  }
+  canvasToWorld(position) {
+    return {
+      x: (position.x - this.offsetX) / this.scale,
+      y: (position.y - this.offsetY) / this.scale
+    };
+  }
+  renderCanvas() {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.drawGrid();
+    if (!this.currentSketchData || !this.currentSketchData.lines)
+      return;
+    this.currentSketchData.lines.forEach((line) => {
+      const lineToolName = line.tool || "pencil";
+      const lineTool = this.tools.find((tool) => tool.name == lineToolName);
+      if (lineTool) {
+        if (line.points.length < 1)
+          return;
+        lineTool.render(line.properties, this, line);
+      }
+    });
+    const statsElement = document.getElementById("canvas-stats");
+    if (statsElement) {
+      statsElement.innerText = `Zoom: ${Math.round(this.scale * 100)}%`;
+    }
+  }
+  drawGrid() {
+    const ctx = this.ctx;
+    const width = this.canvas.width;
+    const height = this.canvas.height;
+    const topLeftWorld = this.canvasToWorld(Vector2D.ZERO);
+    const bottomRightWorld = this.canvasToWorld({ x: width, y: height });
+    let baseGridStep = 50;
+    if (this.scale < 0.2)
+      baseGridStep = 400;
+    else if (this.scale < 0.5)
+      baseGridStep = 200;
+    else if (this.scale < 0.8)
+      baseGridStep = 100;
+    else if (this.scale > 3)
+      baseGridStep = 10;
+    const startX = Math.floor(topLeftWorld.x / baseGridStep) * baseGridStep;
+    const endX = Math.ceil(bottomRightWorld.x / baseGridStep) * baseGridStep;
+    const startY = Math.floor(topLeftWorld.y / baseGridStep) * baseGridStep;
+    const endY = Math.ceil(bottomRightWorld.y / baseGridStep) * baseGridStep;
+    ctx.save();
+    ctx.strokeStyle = "#e2e8f0";
+    ctx.lineWidth = 1;
+    for (let wx = startX;wx <= endX; wx += baseGridStep) {
+      const screenPos = this.worldToCanvas({ x: wx, y: 0 });
+      ctx.beginPath();
+      ctx.moveTo(screenPos.x, 0);
+      ctx.lineTo(screenPos.x, height);
+      ctx.stroke();
+    }
+    for (let wy = startY;wy <= endY; wy += baseGridStep) {
+      const screenPos = this.worldToCanvas({ x: 0, y: wy });
+      ctx.beginPath();
+      ctx.moveTo(0, screenPos.y);
+      ctx.lineTo(width, screenPos.y);
+      ctx.stroke();
+    }
+    const origin = this.worldToCanvas(Vector2D.ZERO);
+    if (origin.x >= 0 && origin.x <= width) {
+      ctx.strokeStyle = "#cbd5e1";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(origin.x, 0);
+      ctx.lineTo(origin.x, height);
+      ctx.stroke();
+    }
+    if (origin.y >= 0 && origin.y <= height) {
+      ctx.strokeStyle = "#cbd5e1";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(0, origin.y);
+      ctx.lineTo(width, origin.y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  getDistance(p1, p2) {
+    return Math.hypot(p1.clientX - p2.clientX, p1.clientY - p2.clientY);
+  }
+  getMidpoint(p1, p2) {
+    return {
+      x: (p1.clientX + p2.clientX) / 2,
+      y: (p1.clientY + p2.clientY) / 2
+    };
+  }
+  setupPointerEvents() {
+    this.canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+    this.canvas.addEventListener("pointerdown", (e) => {
+      if (e.button === 2 || e.button === 1) {
+        this.isPanning = true;
+        this.startX = e.clientX;
+        this.startY = e.clientY;
+        this.canvas.setPointerCapture(e.pointerId);
+        return;
+      }
+      e.preventDefault();
+      this.activePointers.push(e);
+      if (this.activePointers.length === 1 && !this.isDrawing) {
+        if (e.pointerType === "touch" && !this.fingerDrawEnabled) {
+          this.isFingerPanning = true;
+          this.fStartX = e.clientX;
+          this.fStartY = e.clientY;
+          return;
+        }
+        this.isDrawing = true;
+        const wCoord = this.screenToWorld(e.clientX, e.clientY);
+        const currentPressure = e.pointerType === "mouse" && e.buttons === 1 && e.pressure === 0 ? 0.5 : e.pressure || 0.5;
+        const pointPayload = { x: wCoord.x, y: wCoord.y, pressure: currentPressure };
+        if (this.activeTool) {
+          this.activeTool.pointerDown(this, this.currentSketchData, pointPayload, e);
+        }
+        this.renderCanvas();
+      } else if (this.activePointers.length === 2) {
+        this.isDrawing = false;
+        this.isFingerPanning = false;
+        if (this.currentSketchData.lines.length > 0 && this.currentSketchData.lines[this.currentSketchData.lines.length - 1].points.length === 1) {
+          this.currentSketchData.lines.pop();
+        }
+        this.initialDist = this.getDistance(this.activePointers[0], this.activePointers[1]);
+        this.initialScale = this.scale;
+        const screenMid = this.getMidpoint(this.activePointers[0], this.activePointers[1]);
+        const rect = this.canvas.getBoundingClientRect();
+        const canvasMidX = screenMid.x - rect.left;
+        const canvasMidY = screenMid.y - rect.top;
+        this.initialWorldMid = {
+          x: (canvasMidX - this.offsetX) / this.scale,
+          y: (canvasMidY - this.offsetY) / this.scale
+        };
+      }
+    });
+    this.canvas.addEventListener("pointermove", (e) => {
+      e.preventDefault();
+      if (this.isPanning) {
+        this.offsetX += e.clientX - this.startX;
+        this.offsetY += e.clientY - this.startY;
+        this.startX = e.clientX;
+        this.startY = e.clientY;
+        this.renderCanvas();
+        return;
+      }
+      if (this.isFingerPanning && this.activePointers.length === 1) {
+        this.offsetX += e.clientX - this.fStartX;
+        this.offsetY += e.clientY - this.fStartY;
+        this.fStartX = e.clientX;
+        this.fStartY = e.clientY;
+        this.renderCanvas();
+        return;
+      }
+      const index = this.activePointers.findIndex((p) => p.pointerId === e.pointerId);
+      if (index !== -1)
+        this.activePointers[index] = e;
+      if (this.isDrawing && this.activePointers.length === 1) {
+        const wCoord = this.screenToWorld(e.clientX, e.clientY);
+        const currentPressure = e.pointerType === "mouse" && e.buttons === 1 && e.pressure === 0 ? 0.5 : e.pressure || 0.5;
+        const pointPayload = { x: wCoord.x, y: wCoord.y, pressure: currentPressure };
+        if (this.activeTool) {
+          this.activeTool.pointerMove(this, this.currentSketchData, pointPayload, e);
+        }
+        this.renderCanvas();
+      } else if (this.activePointers.length === 2) {
+        const currentDist = this.getDistance(this.activePointers[0], this.activePointers[1]);
+        const screenMid = this.getMidpoint(this.activePointers[0], this.activePointers[1]);
+        const rect = this.canvas.getBoundingClientRect();
+        const canvasMidX = screenMid.x - rect.left;
+        const canvasMidY = screenMid.y - rect.top;
+        const targetScale = this.initialScale * (currentDist / this.initialDist);
+        this.scale = Math.max(0.1, Math.min(targetScale, 15));
+        this.offsetX = canvasMidX - this.initialWorldMid.x * this.scale;
+        this.offsetY = canvasMidY - this.initialWorldMid.y * this.scale;
+        this.renderCanvas();
+      }
+    });
+    const handlePointerUp = (e) => {
+      this.activePointers = this.activePointers.filter((p) => p.pointerId !== e.pointerId);
+      if (this.isPanning) {
+        this.isPanning = false;
+        this.canvas.releasePointerCapture(e.pointerId);
+      }
+      if (this.activePointers.length < 1) {
+        this.isFingerPanning = false;
+      }
+      if (this.isDrawing) {
+        this.isDrawing = false;
+        const wCoord = this.screenToWorld(e.clientX, e.clientY);
+        const pointPayload = { x: wCoord.x, y: wCoord.y, pressure: e.pressure || 0.5 };
+        if (this.activeTool) {
+          this.activeTool.pointerUp(this, this.currentSketchData, pointPayload, e);
+        }
+        if (this.onSaveCallback) {
+          this.onSaveCallback(this.currentSketchData);
+        }
+      }
+      if (this.activePointers.length < 2) {
+        this.initialDist = 0;
+      }
+      this.renderCanvas();
+    };
+    this.canvas.addEventListener("pointerup", handlePointerUp);
+    this.canvas.addEventListener("pointercancel", handlePointerUp);
+    this.canvas.addEventListener("pointerleave", handlePointerUp);
+    this.canvas.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      const rect = this.canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const worldX = (mouseX - this.offsetX) / this.scale;
+      const worldY = (mouseY - this.offsetY) / this.scale;
+      const zoomIntensity = 0.1;
+      if (e.deltaY < 0) {
+        this.scale = Math.min(this.scale * (1 + zoomIntensity), 15);
+      } else {
+        this.scale = Math.max(this.scale * (1 - zoomIntensity), 0.1);
+      }
+      this.offsetX = mouseX - worldX * this.scale;
+      this.offsetY = mouseY - worldY * this.scale;
+      this.renderCanvas();
+    }, { passive: false });
+  }
+  resizeCanvas() {
+    const container = this.canvas.parentElement;
+    if (container) {
+      this.canvas.width = container.clientWidth;
+      this.canvas.height = container.clientHeight;
+      this.renderCanvas();
+    }
+  }
+  loadSketchData(data) {
+    this.currentSketchData = data;
+    this.renderCanvas();
+  }
+}
+
+class Vector2D {
+  x;
+  y;
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+  static get ZERO() {
+    return new Vector2D(0, 0);
+  }
+  static get ONE() {
+    return new Vector2D(1, 1);
+  }
+}
+
+// src/MyTools.ts
+class UiManager {
+  canvasEngine;
+  selectedThickness = 2;
+  selectedColor = "#000000";
+  constructor(canvasEngine) {
+    this.canvasEngine = canvasEngine;
+    this.selectedThickness = canvasEngine.selectedThickness;
+    this.selectedColor = canvasEngine.selectedColor;
+  }
+  async renderSketchList() {
+    const listContainer = document.getElementById("sketch-list");
+    if (!listContainer)
+      return;
+    const sketches = await MyIndexedDb.getAll("sketches");
+    sketches.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
+    listContainer.innerHTML = "";
+    const currentSketch = this.canvasEngine.currentSketchData;
+    sketches.forEach((s) => {
+      const item = document.createElement("div");
+      item.className = `sketch-item ${currentSketch && currentSketch.id === s.id ? "active" : ""}`;
+      item.innerText = s.name;
+      item.title = s.name;
+      item.onclick = async () => {
+        const updatedSketch = await MyIndexedDb.get("sketches", s.id);
+        if (updatedSketch) {
+          this.canvasEngine.loadSketchData(updatedSketch);
+        }
+        document.querySelectorAll(".sketch-item").forEach((i) => i.classList.remove("active"));
+        item.classList.add("active");
+      };
+      item.ondblclick = async (e) => {
+        e.stopPropagation();
+        const newName = prompt("Rename sketch:", s.name);
+        if (!newName || newName.trim() === "" || newName.trim() === s.name)
+          return;
+        s.name = newName.trim();
+        await MyIndexedDb.set("sketches", s);
+        await this.renderSketchList();
+      };
+      item.oncontextmenu = async (e) => {
+        e.preventDefault();
+        if (confirm(`Are you sure you want to delete "${s.name}"?`)) {
+          await MyIndexedDb.delete("sketches", s.id);
+          const activeSketch = this.canvasEngine.currentSketchData;
+          if (activeSketch && activeSketch.id === s.id) {
+            const remaining = await MyIndexedDb.getAll("sketches");
+            if (remaining.length > 0) {
+              this.canvasEngine.loadSketchData(remaining[0]);
+            } else {
+              this.canvasEngine.loadSketchData(null);
+            }
+          }
+          await this.renderSketchList();
+        }
+      };
+      listContainer.appendChild(item);
+    });
+  }
+}
+
+// src/Eraser.ts
+class Eraser {
+  name = "eraser";
+  icon = "\uD83E\uDDFD";
+  editable;
+  properties = { thickness: 15 };
+  quickProperties = ["thickness"];
+  constructor() {
+    this.editable = new Editable(this.properties);
+    this.editable.setEditor("thickness", "thickness");
+  }
+  async render(properties, canvas, line) {}
+  pointerDown(canvas, sketch, point, event) {
+    this.eraseLinesAt(point, this.properties.thickness, canvas, sketch);
+  }
+  pointerMove(canvas, sketch, point, event) {
+    if (canvas.getIsDrawing()) {
+      this.eraseLinesAt(point, this.properties.thickness, canvas, sketch);
+    }
+  }
+  pointerUp(canvas, sketch, point, event) {}
+  eraseLinesAt(position, eraseRadius, canvas, sketch) {
+    if (!sketch || !sketch.lines)
+      return;
+    const currentScale = canvas.getScale();
+    sketch.lines = sketch.lines.filter((line) => {
+      const isHit = line.points.some((pt) => {
+        const dx = pt.x - position.x;
+        const dy = pt.y - position.y;
+        const distanceSquared = dx * dx + dy * dy;
+        const collision = (eraseRadius + this.properties.thickness / 2) / currentScale;
+        return distanceSquared < collision * collision;
+      });
+      return !isHit;
+    });
+  }
+}
+
+// src/editors-color.ts
+class ColorFromHex {
+  input;
+  bindings = [];
+  constructor() {
+    this.input = document.createElement("input");
+    this.input.type = "text";
+    this.input.placeholder = "#ffffff";
+    this.input.style.fontFamily = "monospace";
+    this.input.style.padding = "4px 8px";
+    this.input.addEventListener("input", () => {
+      Promise.all(this.bindings.map((b) => b.onPropertyChanged(this, "value"))).catch((err) => console.error("Failed to notify bindings:", err));
+    });
+  }
+  set(propertyName, value) {
+    if (propertyName === "value" && this.input.value !== value) {
+      this.input.value = value ?? "";
+      Promise.all(this.bindings.map((b) => b.onPropertyChanged(this, "value"))).catch((err) => console.error("Failed to notify bindings:", err));
+    }
+  }
+  get(propertyName) {
+    return propertyName === "value" ? this.input.value : undefined;
+  }
+  bind(binding) {
+    if (!this.bindings.includes(binding)) {
+      this.bindings.push(binding);
+    }
+  }
+  unbind(binding) {
+    this.bindings = this.bindings.filter((b) => b !== binding);
+  }
+}
+
+class ColorFromPalette {
+  input;
+  palette = [];
+  bindings = [];
+  activeColor = null;
+  constructor() {
+    this.input = document.createElement("div");
+    this.input.classList.add("palette-color");
+  }
+  setPalette(colors) {
+    this.palette = colors;
+    this.redraw();
+  }
+  set(propertyName, value) {
+    if (propertyName === "value" && this.activeColor !== value) {
+      this.activeColor = value ?? null;
+      this.redraw();
+      Promise.all(this.bindings.map((b) => b.onPropertyChanged(this, "value"))).catch((err) => console.error("Failed to notify bindings:", err));
+    }
+  }
+  get(propertyName) {
+    return propertyName === "value" ? this.activeColor : undefined;
+  }
+  bind(binding) {
+    if (!this.bindings.includes(binding)) {
+      this.bindings.push(binding);
+    }
+  }
+  unbind(binding) {
+    this.bindings = this.bindings.filter((b) => b !== binding);
+  }
+  redraw() {
+    this.input.innerHTML = "";
+    this.palette.forEach((color) => {
+      const swatch = document.createElement("div");
+      swatch.classList.add("palette-swatch");
+      swatch.style.backgroundColor = color;
+      if (color === this.activeColor) {
+        swatch.classList.add("active");
+      }
+      swatch.addEventListener("click", () => {
+        this.activeColor = color;
+        this.redraw();
+        Promise.all(this.bindings.map((b) => b.onPropertyChanged(this, "value"))).catch((err) => console.error("Failed to notify bindings:", err));
+      });
+      this.input.appendChild(swatch);
+    });
+  }
+}
+
+class ColorEditor {
+  hex;
+  palette;
+  input;
+  bindings = [];
+  internalBindings = [];
+  value = "";
+  constructor() {
+    this.input = document.createElement("div");
+    this.input.style.display = "flex";
+    this.input.style.flexDirection = "column";
+    this.input.style.gap = "10px";
+    this.input.style.width = "fit-content";
+    this.palette = new ColorFromPalette;
+    this.hex = new ColorFromHex;
+    this.input.appendChild(this.palette.input);
+    this.input.appendChild(this.hex.input);
+    this.setupInternalBindings();
+  }
+  setupInternalBindings() {
+    this.internalBindings = [
+      new BindingTwoWay(this, "value", this.palette, "value"),
+      new BindingTwoWay(this, "value", this.hex, "value")
+    ];
+    this.internalBindings.forEach((binding) => binding.bind());
+  }
+  setPalette(colors) {
+    this.palette.setPalette(colors);
+  }
+  set(propertyName, value) {
+    if (propertyName === "value" && this.value !== value) {
+      this.value = value ?? "";
+      Promise.all(this.bindings.map((b) => b.onPropertyChanged(this, "value"))).catch((err) => console.error("Failed to notify external bindings:", err));
+    }
+  }
+  get(propertyName) {
+    return propertyName === "value" ? this.value : undefined;
+  }
+  bind(binding) {
+    if (!this.bindings.includes(binding)) {
+      this.bindings.push(binding);
+    }
+  }
+  unbind(binding) {
+    this.bindings = this.bindings.filter((b) => b !== binding);
+  }
+}
+
+// src/editors-thickness.ts
+class ThicknessFromSlider {
+  input;
+  bindings = [];
+  constructor(min = 1, max = 20, step = 1) {
+    this.input = document.createElement("input");
+    this.input.type = "range";
+    this.input.min = min.toString();
+    this.input.max = max.toString();
+    this.input.step = step.toString();
+    this.input.style.width = "150px";
+    this.input.addEventListener("input", () => {
+      Promise.all(this.bindings.map((b) => b.onPropertyChanged(this, "value"))).catch((err) => console.error("Failed to notify bindings:", err));
+    });
+  }
+  set(propertyName, value) {
+    if (propertyName === "value") {
+      const numericValue = value?.toString() ?? this.input.min;
+      if (this.input.value !== numericValue) {
+        this.input.value = numericValue;
+        Promise.all(this.bindings.map((b) => b.onPropertyChanged(this, "value"))).catch((err) => console.error("Failed to notify bindings:", err));
+      }
+    }
+  }
+  get(propertyName) {
+    return propertyName === "value" ? Number(this.input.value) : undefined;
+  }
+  bind(binding) {
+    if (!this.bindings.includes(binding)) {
+      this.bindings.push(binding);
+    }
+  }
+  unbind(binding) {
+    this.bindings = this.bindings.filter((b) => b !== binding);
+  }
+}
+
+class ThicknessFromPalette {
+  input;
+  sizes = [];
+  bindings = [];
+  activeThickness = null;
+  constructor() {
+    this.input = document.createElement("div");
+    this.input.classList.add("palette-thickness");
+  }
+  setThicknesses(sizes) {
+    this.sizes = sizes;
+    this.redraw();
+  }
+  set(propertyName, value) {
+    if (propertyName === "value" && this.activeThickness !== value) {
+      this.activeThickness = value != null ? Number(value) : null;
+      this.redraw();
+      Promise.all(this.bindings.map((b) => b.onPropertyChanged(this, "value"))).catch((err) => console.error("Failed to notify bindings:", err));
+    }
+  }
+  get(propertyName) {
+    return propertyName === "value" ? this.activeThickness : undefined;
+  }
+  bind(binding) {
+    if (!this.bindings.includes(binding)) {
+      this.bindings.push(binding);
+    }
+  }
+  unbind(binding) {
+    this.bindings = this.bindings.filter((b) => b !== binding);
+  }
+  redraw() {
+    this.input.innerHTML = "";
+    this.sizes.forEach((size) => {
+      const swatch = document.createElement("div");
+      swatch.classList.add("palette-swatch");
+      const dot = document.createElement("div");
+      dot.style.backgroundColor = "black";
+      dot.style.borderRadius = "50%";
+      dot.style.width = `${size}px`;
+      dot.style.height = `${size}px`;
+      swatch.appendChild(dot);
+      if (size === this.activeThickness) {
+        swatch.classList.add("active");
+      }
+      swatch.addEventListener("click", () => {
+        this.activeThickness = size;
+        this.redraw();
+        Promise.all(this.bindings.map((b) => b.onPropertyChanged(this, "value"))).catch((err) => console.error("Failed to notify bindings:", err));
+      });
+      this.input.appendChild(swatch);
+    });
+  }
+}
+
+class ThicknessEditor {
+  input;
+  slider;
+  palette;
+  bindings = [];
+  internalBindings = [];
+  value = 1;
+  constructor() {
+    this.input = document.createElement("div");
+    this.input.style.display = "flex";
+    this.input.style.flexDirection = "column";
+    this.input.style.gap = "15px";
+    this.input.style.width = "fit-content";
+    this.palette = new ThicknessFromPalette;
+    this.input.appendChild(this.palette.input);
+    this.slider = new ThicknessFromSlider(1, 20, 1);
+    this.input.appendChild(this.slider.input);
+    this.setupInternalBindings();
+  }
+  setupInternalBindings() {
+    this.internalBindings = [
+      new BindingTwoWay(this, "value", this.palette, "value"),
+      new BindingTwoWay(this, "value", this.slider, "value")
+    ];
+    this.internalBindings.forEach((binding) => binding.bind());
+  }
+  setThicknesses(sizes) {
+    this.palette.setThicknesses(sizes);
+  }
+  set(propertyName, value) {
+    if (propertyName === "value" && this.value !== value) {
+      this.value = value != null ? Number(value) : 1;
+      Promise.all(this.bindings.map((b) => b.onPropertyChanged(this, "value"))).catch((err) => console.error("Failed to notify external bindings:", err));
+    }
+  }
+  get(propertyName) {
+    return propertyName === "value" ? this.value : undefined;
+  }
+  bind(binding) {
+    if (!this.bindings.includes(binding)) {
+      this.bindings.push(binding);
+    }
+  }
+  unbind(binding) {
+    this.bindings = this.bindings.filter((b) => b !== binding);
+  }
+}
+
+// src/editors-properties.ts
+class FullPropertyEditor {
+  input;
+  activeBindings = [];
+  constructor() {
+    this.input = document.createElement("div");
+    this.input.classList.add("tool-fulledit");
+  }
+  edit(instance) {
+    this.activeBindings.map((b) => b.unbind());
+    this.activeBindings = [];
+    this.input.innerHTML = "";
+    const rawData = instance.instance || {};
+    const propertyNames = Object.keys(rawData);
+    propertyNames.map((propertyName) => {
+      const editorKey = instance.getEditor(propertyName);
+      if (!editorKey)
+        return;
+      const editor = this.createEditor(editorKey);
+      if (!editor)
+        return;
+      const property = document.createElement("div");
+      property.classList.add("property-editor");
+      this.input.appendChild(property);
+      const label = document.createElement("label");
+      label.innerText = propertyName;
+      property.appendChild(label);
+      property.appendChild(editor.input);
+      const binding = new BindingTwoWay(instance, propertyName, editor, "value");
+      this.activeBindings.push(binding);
+      binding.bind();
+    });
+  }
+  createEditor(key) {
+    if (key === "color") {
+      const editor = new ColorEditor;
+      const palette = ["#ff0000", "#00ff00", "#0000ff"];
+      editor.setPalette(palette);
+      return editor;
+    } else if (key === "thickness") {
+      const editor = new ThicknessEditor;
+      const thicknesses = [2, 5, 10, 20];
+      editor.setThicknesses(thicknesses);
+      return editor;
+    }
+    return null;
+  }
+}
+
+class QuickPropertyEditor {
+  input;
+  activeBindings = [];
+  constructor() {
+    this.input = document.createElement("div");
+    this.input.classList.add("tool-quickedit");
+  }
+  edit(instance) {
+    this.activeBindings.map((b) => b.unbind());
+    this.activeBindings = [];
+    this.input.innerHTML = "";
+    const rawData = instance.instance || {};
+    const propertyNames = Object.keys(rawData);
+    propertyNames.map((propertyName) => {
+      const editorKey = instance.getEditor(propertyName);
+      if (!editorKey)
+        return;
+      const editor = this.createEditor(editorKey);
+      if (!editor)
+        return;
+      const property = document.createElement("div");
+      property.classList.add("property-editor");
+      this.input.appendChild(property);
+      property.appendChild(editor.input);
+      const binding = new BindingTwoWay(instance, propertyName, editor, "value");
+      this.activeBindings.push(binding);
+      binding.bind();
+    });
+  }
+  createEditor(key) {
+    if (key === "color") {
+      const editor = new ColorFromPalette;
+      const palette = ["#ff0000", "#00ff00", "#0000ff"];
+      editor.setPalette(palette);
+      return editor;
+    } else if (key === "thickness") {
+      const editor = new ThicknessFromPalette;
+      const thicknesses = [2, 5, 10, 20];
+      editor.setThicknesses(thicknesses);
+      return editor;
+    }
+    return null;
+  }
+}
+
+// src/MyToolMenu.ts
+class ToolBarManager {
+  canvasInstance;
+  toolsList;
+  topBarElement;
+  quickOptionsContainer;
+  fullConfigDropdownPanel;
+  toolsContainer;
+  fullPropertyEditor;
+  quickPropertyEditor;
+  constructor(topBarSelector, canvas, tools) {
+    const element = document.querySelector(topBarSelector);
+    if (!element) {
+      throw new Error(`Could not find top bar container using selector: ${topBarSelector}`);
+    }
+    this.topBarElement = element;
+    this.canvasInstance = canvas;
+    this.toolsList = tools;
+    this.fullPropertyEditor = new FullPropertyEditor;
+    this.quickPropertyEditor = new QuickPropertyEditor;
+    this.initStructure();
+    this.updatePropertyEditors();
+    this.setupGlobalCloseListeners();
+  }
+  initStructure() {
+    this.topBarElement.innerHTML = "";
+    this.topBarElement.style.display = "flex";
+    this.topBarElement.style.alignItems = "center";
+    this.topBarElement.style.gap = "15px";
+    this.topBarElement.style.padding = "6px 12px";
+    this.topBarElement.style.backgroundColor = "#ffffff";
+    this.topBarElement.style.borderBottom = "1px solid #e2e8f0";
+    this.topBarElement.style.position = "relative";
+    this.toolsContainer = document.createElement("div");
+    this.toolsContainer.style.display = "flex";
+    this.toolsContainer.style.gap = "6px";
+    this.topBarElement.appendChild(this.toolsContainer);
+    this.toolsList.forEach((tool) => {
+      const selector = this.renderToolButton(tool, tool === this.canvasInstance.activeTool);
+      this.toolsContainer.appendChild(selector);
+    });
+    this.quickOptionsContainer = document.createElement("div");
+    this.quickOptionsContainer.style.display = "flex";
+    this.quickOptionsContainer.style.alignItems = "center";
+    this.quickOptionsContainer.style.gap = "12px";
+    this.quickOptionsContainer.appendChild(this.quickPropertyEditor.input);
+    this.topBarElement.appendChild(this.quickOptionsContainer);
+    this.fullConfigDropdownPanel = document.createElement("div");
+    this.fullConfigDropdownPanel.style.display = "none";
+    this.fullConfigDropdownPanel.style.position = "absolute";
+    this.fullConfigDropdownPanel.style.backgroundColor = "#ffffff";
+    this.fullConfigDropdownPanel.style.border = "1px solid #cbd5e1";
+    this.fullConfigDropdownPanel.style.boxShadow = "0px 6px 16px rgba(0,0,0,0.12)";
+    this.fullConfigDropdownPanel.style.borderRadius = "6px";
+    this.fullConfigDropdownPanel.style.padding = "14px";
+    this.fullConfigDropdownPanel.style.minWidth = "260px";
+    this.fullConfigDropdownPanel.style.zIndex = "2000";
+    this.fullConfigDropdownPanel.appendChild(this.fullPropertyEditor.input);
+    this.topBarElement.appendChild(this.fullConfigDropdownPanel);
+    this.fullConfigDropdownPanel.addEventListener("click", (e) => e.stopPropagation());
+  }
+  renderToolButton(tool, isSelected) {
+    const item = document.createElement("div");
+    item.style.width = "42px";
+    item.style.height = "42px";
+    item.style.cursor = "pointer";
+    item.style.display = "flex";
+    item.style.alignItems = "center";
+    item.style.justifyContent = "center";
+    item.style.borderRadius = "4px";
+    item.className = isSelected ? "tool-btn active" : "tool-btn";
+    item.innerHTML = `<span>${tool.icon}</span>`;
+    item.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (this.canvasInstance.activeTool === tool) {
+        const isShowing = this.fullConfigDropdownPanel.style.display === "block";
+        this.fullConfigDropdownPanel.style.display = isShowing ? "none" : "block";
+        if (!isShowing)
+          this.positionAndShowDropdown(item);
+        return;
+      }
+      this.canvasInstance.activeTool = tool;
+      if (item.parentElement) {
+        item.parentElement.querySelectorAll(".tool-btn").forEach((node) => {
+          node.classList.remove("active");
+        });
+      }
+      item.classList.add("active");
+      this.fullConfigDropdownPanel.style.display = "none";
+      this.updatePropertyEditors();
+    });
+    return item;
+  }
+  async updatePropertyEditors() {
+    const tool = this.canvasInstance.activeTool;
+    if (!tool)
+      return;
+    await Promise.all([
+      this.quickPropertyEditor.edit(tool.editable),
+      this.fullPropertyEditor.edit(tool.editable)
+    ]);
+    this.canvasInstance.renderCanvas();
+  }
+  positionAndShowDropdown(anchorElement) {
+    const rect = anchorElement.getBoundingClientRect();
+    const parentRect = this.topBarElement.getBoundingClientRect();
+    this.fullConfigDropdownPanel.style.left = `${rect.left - parentRect.left}px`;
+    this.fullConfigDropdownPanel.style.top = `${rect.bottom - parentRect.top + 6}px`;
+    this.fullConfigDropdownPanel.style.display = "block";
+  }
+  setupGlobalCloseListeners() {
+    window.addEventListener("pointerdown", (e) => {
+      const target = e.target;
+      if (this.fullConfigDropdownPanel && !this.fullConfigDropdownPanel.contains(target)) {
+        this.fullConfigDropdownPanel.style.display = "none";
+      }
+    });
+  }
+}
+
+// src/app.ts
+window.addEventListener("DOMContentLoaded", async () => {
+  try {
+    await MyIndexedDb.initialize();
+    const savedData = await MyIndexedDb.getAll("sketches");
+    const canvasElement = document.getElementById("sketchCanvas");
+    const tools = [new Pencil, new Eraser];
+    const engine = new SketchCanvas(canvasElement, tools, async (updatedData) => {
+      await MyIndexedDb.set("sketches", updatedData);
+    });
+    if (savedData) {
+      engine.loadSketchData(savedData[0]);
+    }
+    const toolbar = new ToolBarManager(".top-bar", engine, tools);
+    const sketches = await MyIndexedDb.getAll("sketches");
+    if (sketches.length === 0) {
+      const initialSketch = {
+        id: Date.now(),
+        name: "Welcome Sketch 01",
+        lines: []
+      };
+      await MyIndexedDb.set("sketches", initialSketch);
+    }
+    const ui = new UiManager(engine);
+    await ui.renderSketchList();
+    const toggleBtn = document.getElementById("sidebar-toggle");
+    const sidebar = document.getElementById("sidebar");
+    toggleBtn.onclick = () => {
+      sidebar.classList.toggle("collapsed");
+      toggleBtn.innerText = sidebar.classList.contains("collapsed") ? "⟩" : "⟨";
+      setTimeout(() => engine.resizeCanvas(), 300);
+    };
+    const addSketchBtn = document.getElementById("btn-add-sketch");
+    addSketchBtn.onclick = async () => {
+      const name = prompt("Enter new sketch name:", `My Sketch ${Date.now().toString().slice(-4)}`);
+      if (!name || name.trim() === "")
+        return;
+      const newSketch = {
+        id: Date.now(),
+        name: name.trim(),
+        lines: []
+      };
+      await MyIndexedDb.set("sketches", newSketch);
+      await ui.renderSketchList();
+    };
+  } catch (error) {
+    console.error("Failed to initialize the application pipeline core:", error);
+  }
+});
+</script></body>
+</html>

@@ -1,0 +1,354 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dotScratch Application</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #f4f6f9;
+            color: #333;
+            overflow: hidden;
+        }
+
+        /* Top Row Controls */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #ffffff;
+            padding: 0 20px;
+            height: 60px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            z-index: 10;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #888;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+
+        .thickness-btn {
+            background: #f0f2f5;
+            border: 2px solid transparent;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .thickness-btn:hover {
+                background: #e4e6e9;
+            }
+
+            .thickness-btn.active {
+                background: #e8f0fe;
+                border-color: #1a73e8;
+                color: #1a73e8;
+            }
+
+        .color-swatch {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid #ffffff;
+            cursor: pointer;
+            box-shadow: 0 0 0 1px #dcdfe6;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+            .color-swatch:hover {
+                transform: scale(1.1);
+            }
+
+            .color-swatch.active {
+                box-shadow: 0 0 0 2px #1a73e8;
+                transform: scale(1.05);
+            }
+
+        /* Main App Workspace Layout */
+        .main-container {
+            display: flex;
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Expandable Sidebar Menu */
+        .sidebar {
+            width: 280px;
+            background-color: #ffffff;
+            border-right: 1px solid #e0e4ec;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 5;
+        }
+
+            .sidebar.collapsed {
+                margin-left: -280px;
+            }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e4ec;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+            .sidebar-header h2 {
+                font-size: 16px;
+                font-weight: 600;
+            }
+
+        .btn-new-sketch {
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 13px;
+            transition: background 0.2s ease;
+        }
+
+            .btn-new-sketch:hover {
+                background-color: #1557b0;
+            }
+
+        .sketch-list-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .sketch-item {
+            padding: 12px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-bottom: 4px;
+            font-size: 14px;
+            transition: background 0.2s ease;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+            .sketch-item:hover {
+                background-color: #f1f3f4;
+            }
+
+            .sketch-item.active {
+                background-color: #e8f0fe;
+                color: #1a73e8;
+                font-weight: 500;
+            }
+
+        /* Toggle Button Hooked Adjacent to Sidebar */
+        .sidebar-toggle {
+            position: absolute;
+            left: 280px;
+            top: 15px;
+            z-index: 6;
+            background: #ffffff;
+            border: 1px solid #e0e4ec;
+            border-left: none;
+            border-radius: 0 6px 6px 0;
+            padding: 10px 8px;
+            cursor: pointer;
+            box-shadow: 2px 2px 6px rgba(0,0,0,0.04);
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: bold;
+        }
+
+        .sidebar.collapsed + .sidebar-toggle {
+            left: 0;
+        }
+
+        /* Right Canvas Sandbox Pane */
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            background-color: #f8f9fa;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            touch-action: none; /* Prevents default browser panning/zooming over the workspace canvas */
+        }
+
+        .canvas-stats {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: #666;
+            backdrop-filter: blur(4px);
+            pointer-events: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+
+
+        /* my styling here */
+
+        :root {
+            --selected-background: #e8f0fe;
+            --selected-border: #1a73e8;
+            --hover-background: #f1f5fd;
+            --hover-border: #7baaf7;
+        }
+
+        .active {
+            background: var(--selected-background);
+            border: 1px solid var(--selected-border);
+            color: #1a73e8;
+            border-radius: 5px;
+        }
+
+        .palette-swatch {
+            min-width: 40px;
+            min-height: 40px;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .palette-color {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+            .palette-color .palette-swatch {
+                border-radius: 20px;
+                border: 8px solid white;
+            }
+
+                .palette-color .palette-swatch:hover {
+                    border-radius: 20px;
+                    color: inherit;
+                    border: 4px solid white;
+                }
+
+                .palette-color .palette-swatch.active {
+                    border-radius: 20px;
+                    color: inherit;
+                    border: 4px solid var(--selected-background);
+                    outline: 2px solid #1a73e8;
+                }
+
+        .palette-thickness {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+            .palette-thickness .palette-swatch {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 4px;
+            }
+
+                .palette-thickness .palette-swatch:hover {
+                    background: var(--hover-background);
+                    border: 1px solid var(--hover-border);
+                }
+
+                .palette-thickness .palette-swatch.active {
+                    background: var(--selected-background);
+                    border: 1px solid var(--selected-border);
+                }
+
+        .tool-quickedit {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+        }
+            .tool-quickedit .property-editor {
+                display: flex;
+                flex-direction: row;
+            }
+
+        .tool-fulledit {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+            .tool-fulledit .property-editor {
+                display:flex;
+                flex-direction:column;
+            }
+
+            .tool-fulledit label {
+                font-weight: bold;
+                display: block;
+                margin-bottom: 5px;
+            }
+    </style>
+</head>
+<body>
+
+    <div id="wip">
+    </div>
+
+    <div class="top-bar">
+    </div>
+
+    <div class="main-container">
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2>Sketches</h2>
+                <button class="btn-new-sketch" id="btn-add-sketch">+ New</button>
+            </div>
+            <div class="sketch-list-container" id="sketch-list">
+            </div>
+        </div>
+
+        <button class="sidebar-toggle" id="sidebar-toggle">⟨</button>
+
+        <div class="canvas-container">
+            <canvas id="sketchCanvas"></canvas>
+            <div class="canvas-stats" id="canvas-stats">Zoom: 100%</div>
+        </div>
+    </div>
+
+    <script type="module" src="./src/app.ts"></script>
+
+</body>
+</html>
