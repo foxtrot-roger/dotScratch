@@ -69,9 +69,6 @@ export class Pencil implements ITool {
     }
 
     public pointerUp(canvas: SketchCanvas, sketch: SketchData, point: Point, event: PointerEvent): void {
-        if (sketch.lines.length === 0) return;
 
-        const currentLine = sketch.lines[sketch.lines.length - 1];
-        currentLine.points.push(point);
     }
 }

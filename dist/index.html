@@ -612,12 +612,7 @@ class Pencil {
     const currentLine = sketch.lines[sketch.lines.length - 1];
     currentLine.points.push(point);
   }
-  pointerUp(canvas, sketch, point, event) {
-    if (sketch.lines.length === 0)
-      return;
-    const currentLine = sketch.lines[sketch.lines.length - 1];
-    currentLine.points.push(point);
-  }
+  pointerUp(canvas, sketch, point, event) {}
 }
 
 // src/MyCanvas.ts
