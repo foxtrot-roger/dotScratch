@@ -33,13 +33,6 @@ export class ToolBarManager {
 
     private initStructure(): void {
         this.topBarElement.innerHTML = '';
-        this.topBarElement.style.display = 'flex';
-        this.topBarElement.style.alignItems = 'center';
-        this.topBarElement.style.gap = '15px';
-        this.topBarElement.style.padding = '6px 12px';
-        this.topBarElement.style.backgroundColor = '#ffffff';
-        this.topBarElement.style.borderBottom = '1px solid #e2e8f0';
-        this.topBarElement.style.position = 'relative';
 
         // 1. Tool selection rail
         this.toolsContainer = document.createElement('div');
