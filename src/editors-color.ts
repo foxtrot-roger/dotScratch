@@ -42,7 +42,7 @@ export class ColorFromPalette implements IEditor {
 
     private palette: string[] = [];
     private bindings: IObserver[] = [];
-    private activeColor: string | null = null;
+    private value: string | null = null;
 
     constructor() {
         this.input = document.createElement('div');
@@ -55,8 +55,8 @@ export class ColorFromPalette implements IEditor {
     }
 
     set(propertyName: string, value: any): void {
-        if (propertyName === 'value' && this.activeColor !== value) {
-            this.activeColor = value ?? null;
+        if (propertyName === 'value' && this.value !== value) {
+            this.value = value ?? null;
             this.redraw();
 
             Promise.all(this.bindings.map(b => b.onPropertyChanged(this, 'value')))
@@ -64,7 +64,7 @@ export class ColorFromPalette implements IEditor {
         }
     }
     get(propertyName: string): any {
-        return propertyName === 'value' ? this.activeColor : undefined;
+        return propertyName === 'value' ? this.value : undefined;
     }
     bind(binding: IObserver): void {
         if (!this.bindings.includes(binding)) {
@@ -84,12 +84,12 @@ export class ColorFromPalette implements IEditor {
 
             swatch.style.backgroundColor = color;
 
-            if (color === this.activeColor) {
+            if (color === this.value) {
                 swatch.classList.add("active");
             }
 
             swatch.addEventListener('click', () => {
-                this.activeColor = color;
+                this.value = color;
                 this.redraw();
 
                 Promise.all(this.bindings.map(b => b.onPropertyChanged(this, 'value')))

@@ -46,7 +46,7 @@ export class ThicknessFromPalette implements IEditor {
 
     private sizes: number[] = [];
     private bindings: IObserver[] = [];
-    private activeThickness: number | null = null;
+    private value: number | null = null;
 
     constructor() {
         this.input = document.createElement('div');
@@ -59,8 +59,8 @@ export class ThicknessFromPalette implements IEditor {
     }
 
     set(propertyName: string, value: any): void {
-        if (propertyName === 'value' && this.activeThickness !== value) {
-            this.activeThickness = value != null ? Number(value) : null;
+        if (propertyName === 'value' && this.value !== value) {
+            this.value = value != null ? Number(value) : null;
             this.redraw();
 
             Promise.all(this.bindings.map(b => b.onPropertyChanged(this, 'value')))
@@ -68,7 +68,7 @@ export class ThicknessFromPalette implements IEditor {
         }
     }
     get(propertyName: string): any {
-        return propertyName === 'value' ? this.activeThickness : undefined;
+        return propertyName === 'value' ? this.value : undefined;
     }
     bind(binding: IObserver): void {
         if (!this.bindings.includes(binding)) {
@@ -94,12 +94,12 @@ export class ThicknessFromPalette implements IEditor {
             
             swatch.appendChild(dot);
 
-            if (size === this.activeThickness) {
+            if (size === this.value) {
                 swatch.classList.add("active");
             }
 
             swatch.addEventListener('click', () => {
-                this.activeThickness = size;
+                this.value = size;
                 this.redraw();
 
                 Promise.all(this.bindings.map(b => b.onPropertyChanged(this, 'value')))
