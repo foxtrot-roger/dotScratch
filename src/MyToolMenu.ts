@@ -13,12 +13,8 @@ export class ToolBarManager {
     private fullPropertyEditor: FullPropertyEditor;
     private quickPropertyEditor: QuickPropertyEditor;
 
-    constructor(topBarSelector: string, canvas: SketchCanvas, tools: ITool[]) {
-        const element = document.querySelector(topBarSelector);
-        if (!element) {
-            throw new Error(`Could not find top bar container using selector: ${topBarSelector}`);
-        }
-        this.topBarElement = element as HTMLElement;
+    constructor(element: HTMLElement, canvas: SketchCanvas, tools: ITool[]) {
+        this.topBarElement = element;
         this.canvasInstance = canvas;
         this.toolsList = tools;
 

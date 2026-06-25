@@ -23,7 +23,8 @@ window.addEventListener('DOMContentLoaded', async () => {
             engine.loadSketchData(savedData[0]);
         }
 
-        const toolbar = new ToolBarManager(".top-bar", engine, tools);
+        const toolbarElement = document.getElementById("top-bar");
+        const toolbar = new ToolBarManager(toolbarElement, engine, tools);
 
         const sketches = await MyIndexedDb.getAll('sketches');
         if (sketches.length === 0) {
