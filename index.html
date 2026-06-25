@@ -12,13 +12,59 @@
             padding: 0;
         }
 
+                :root {
+            /* --- THE 60% DOMINANT LAYER (App Backgrounds & Canvas) --- */
+            --color-60-surface-lowest: #f8fafc;   /* Main canvas background */
+            --color-60-surface-base: #ffffff;     /* Card / Component background */
+  
+            /* --- THE 30% SECONDARY LAYER (Structure & Typography) --- */
+            --color-30-content-main: #0f172a;     /* Main text & label colors */
+            --color-30-content-muted: #64748b;    /* Secondary text / captions */
+            --color-30-surface-divider: #e2e8f0;  /* Standard borders & lines */
+
+            /* --- THE 10% ACCENT LAYER (Focal Points & Call-to-Actions) --- */
+            --color-10-primary: #1a73e8;          /* Your specific brand blue */
+            --color-10-primary-light: #e8f0fe;    /* Active background tint */
+            --color-10-hover-border: #7baaf7;     /* Hover state border */
+            --color-10-hover-bg: #f1f5fd;         /* Hover state background */
+            --color-10-accent-text: #ffffff;      /* Text on top of primary colors */
+  
+            /* Utility Overrides */
+            --color-system-danger: #ef4444;       /* Errors / Destructive actions */
+
+            /* conversion to control stuff */
+            
+            /* 60% Areas (Dominant spaces) */
+            --bg-app: var(--color-60-surface-lowest);
+            --bg-card: var(--color-60-surface-base);
+
+            /* 30% Areas (Framing & Text) */
+            --text-main: var(--color-30-content-main);
+            --text-muted: var(--color-30-content-muted);
+            --border-subtle: var(--color-30-surface-divider);
+
+            /* 10% Areas (Interractive elements) */
+            --bg-action: var(--color-10-primary);
+            --text-on-action: var(--color-10-accent-text);
+
+            /* UI Interactive Shortcuts (Mapped from your original styles) */
+            --selected-background: var(--color-10-primary-light);
+            --selected-border: var(--color-10-primary);
+            --hover-background: var(--color-10-hover-bg);
+            --hover-border: var(--color-10-hover-border);
+  
+            /* Quick fallbacks */
+            --bg-color: var(--bg-card);
+            --fg-color: var(--text-main);
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             display: flex;
             flex-direction: column;
             height: 100vh;
-            background-color: #f4f6f9;
-            color: #333;
+            background-color: var(--bg-app);
+            color: var(--text-main);
             overflow: hidden;
         }
 
@@ -27,10 +73,10 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background-color: #ffffff;
+            background-color: var(--bg-card);
             padding: 6px 12px;
             height: 60px;
-            border-bottom: 1px solid rgb(226, 232, 240);
+            border-bottom: 1px solid var(--border-subtle);
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
             z-index: 10;
         }
@@ -46,8 +92,8 @@
         /* Expandable Sidebar Menu */
         .sidebar {
             width: 280px;
-            background-color: #ffffff;
-            border-right: 1px solid #e0e4ec;
+            background-color: var(--bg-card);
+            border-right: 1px solid var(--border-subtle);
             display: flex;
             flex-direction: column;
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -60,7 +106,7 @@
 
         .sidebar-header {
             padding: 20px;
-            border-bottom: 1px solid #e0e4ec;
+            border-bottom: 1px solid var(--border-subtle);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -72,8 +118,8 @@
             }
 
         .btn-new-sketch {
-            background-color: #1a73e8;
-            color: white;
+            background-color: var(--bg-action);
+            color: var(--text-on-action);
             border: none;
             padding: 8px 14px;
             border-radius: 6px;
@@ -84,7 +130,7 @@
         }
 
             .btn-new-sketch:hover {
-                background-color: #1557b0;
+                background-color: var(--bg-action-hover);
             }
 
         .sketch-list {
@@ -106,12 +152,12 @@
         }
 
             .sketch-item:hover {
-                background-color: #f1f3f4;
+                background-color: var(--hover-background);
             }
 
             .sketch-item.active {
-                background-color: #e8f0fe;
-                color: #1a73e8;
+                background-color: var(--selected-background);
+                color: var(--selected-border);
                 font-weight: 500;
             }
 
@@ -121,8 +167,8 @@
             left: 280px;
             top: 15px;
             z-index: 6;
-            background: #ffffff;
-            border: 1px solid #e0e4ec;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
             border-left: none;
             border-radius: 0 6px 6px 0;
             padding: 10px 8px;
@@ -140,7 +186,7 @@
         .canvas-container {
             flex: 1;
             position: relative;
-            background-color: #f8f9fa;
+            background-color: var(--bg-app);
             overflow: hidden;
         }
 
@@ -148,36 +194,27 @@
             display: block;
             width: 100%;
             height: 100%;
-            touch-action: none; /* Prevents default browser panning/zooming over the workspace canvas */
+            touch-action: none;
         }
 
         .canvas-stats {
             position: absolute;
             bottom: 15px;
             right: 15px;
-            background: rgba(255, 255, 255, 0.85);
+            background: var(--bg-card);
             padding: 6px 12px;
             border-radius: 20px;
             font-size: 11px;
-            color: #666;
+            color: var(--text-muted);
             backdrop-filter: blur(4px);
             pointer-events: none;
             box-shadow: 0 2px 6px rgba(0,0,0,0.05);
         }
 
-        /* my styling here */
-
-        :root {
-            --selected-background: #e8f0fe;
-            --selected-border: #1a73e8;
-            --hover-background: #f1f5fd;
-            --hover-border: #7baaf7;
-        }
-
         .active {
             background: var(--selected-background);
             border: 1px solid var(--selected-border);
-            color: #1a73e8;
+            color: var(--selected-border);
             border-radius: 5px;
         }
 
@@ -194,23 +231,23 @@
             gap: 3px;
         }
 
-            .palette-color .palette-swatch {
-                border-radius: 20px;
-                border: 8px solid white;
-            }
+        .palette-color .palette-swatch {
+            border-radius: 20px;
+            border: 8px solid var(--bg-card);
+        }
 
-                .palette-color .palette-swatch:hover {
-                    border-radius: 20px;
-                    color: inherit;
-                    border: 4px solid white;
-                }
+        .palette-color .palette-swatch:hover {
+            border-radius: 20px;
+            color: inherit;
+            border: 4px solid var(--bg-card);
+        }
 
-                .palette-color .palette-swatch.active {
-                    border-radius: 20px;
-                    color: inherit;
-                    border: 4px solid var(--selected-background);
-                    outline: 2px solid #1a73e8;
-                }
+        .palette-color .palette-swatch.active {
+            border-radius: 20px;
+            color: inherit;
+            border: 4px solid var(--selected-background);
+            outline: 2px solid var(--selected-border);
+        }
 
         .palette-thickness {
             display: flex;
@@ -218,22 +255,22 @@
             gap: 12px;
         }
 
-            .palette-thickness .palette-swatch {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border-radius: 4px;
-            }
+        .palette-thickness .palette-swatch {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+        }
 
-                .palette-thickness .palette-swatch:hover {
-                    background: var(--hover-background);
-                    border: 1px solid var(--hover-border);
-                }
+        .palette-thickness .palette-swatch:hover {
+            background: var(--hover-background);
+            border: 1px solid var(--hover-border);
+        }
 
-                .palette-thickness .palette-swatch.active {
-                    background: var(--selected-background);
-                    border: 1px solid var(--selected-border);
-                }
+        .palette-thickness .palette-swatch.active {
+            background: var(--selected-background);
+            border: 1px solid var(--selected-border);
+        }
 
         .tool-quickedit {
             display: flex;
@@ -241,10 +278,10 @@
             gap: 10px;
         }
 
-            .tool-quickedit .property-editor {
-                display: flex;
-                flex-direction: row;
-            }
+        .tool-quickedit .property-editor {
+            display: flex;
+            flex-direction: row;
+        }
 
         .tool-fulledit {
             display: flex;
@@ -252,16 +289,17 @@
             gap: 10px;
         }
 
-            .tool-fulledit .property-editor {
-                display: flex;
-                flex-direction: column;
-            }
+        .tool-fulledit .property-editor {
+            display: flex;
+            flex-direction: column;
+        }
 
-            .tool-fulledit label {
-                font-weight: bold;
-                display: block;
-                margin-bottom: 5px;
-            }
+        .tool-fulledit label {
+            color: var(--text-main);
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
