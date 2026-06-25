@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimal Triple Dot Menu</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: var(--bg-main);
+        }
+        /* Menu Container */
+        .dropdown-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        /* actual styling starts here */
+        :root {
+            /* Color Palette */
+            --primary: #1a73e8;
+            --primary-hover: #1557b0;
+            --primary-light: #e8f0fe;
+
+            /* --bg-main: #cccccc; */
+            --bg-main: #f8f9fa;
+            --bg-surface: #ffffff;
+            --bg-hover: #f1f3f4;
+            --bg-active: #e8f0fe;
+
+            --border-color: #dadce0;
+            --border-hover: #7baaf7;
+            --border-active: #7baaf7;
+
+            --text-primary: #202124;
+            --text-secondary: #5f6368;
+            --text-muted: #80868b;
+
+            /* Elevation Shadows */
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        /* BUTTON */
+        .button {
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-surface);
+        }
+        .button:hover {
+            border: 1px solid var(--border-hover);
+            background: var(--bg-hover);
+        }
+        
+        /* DROPDOWN */
+        .dropdown-panel {
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-surface);
+            box-shadow: var(--shadow-md);
+        }
+        .dropdown-panel {
+            position: absolute;
+            z-index: 100;
+            display: none;
+        }
+        .dropdown-panel.dir-down-left { top: calc(100% + 6px); right: 0; }
+        .dropdown-panel.dir-down-right { top: calc(100% + 6px); left: 0; }
+        .dropdown-panel.dir-up-left { bottom: calc(100% + 6px); right: 0; }
+        .dropdown-panel.dir-up-right { bottom: calc(100% + 6px); left: 0; }
+        .dropdown-panel.dir-right-down { top: 0; left: calc(100% + 6px); }
+        .dropdown-panel.dir-right-up { bottom: 0; top: auto; left: calc(100% + 6px); }
+        .dropdown-panel.dir-left-down { top: 0; right: calc(100% + 6px); }
+        .dropdown-panel.dir-left-up { bottom: 0; top: auto; right: calc(100% + 6px); }
+
+        /* MENU ITEMS */
+        .menu-container {
+            display: flex;
+            flex-direction: column;
+        }
+        .menu-item {
+            display: block;
+            width: 100%;
+            text-align: left;
+            box-sizing: border-box;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            border: none; 
+            cursor: pointer;
+        }
+        .menu-item {
+            padding: 8px 16px;
+            color: var(--text-primary);
+            background-color: var(--bg-surface);
+        }
+        .menu-item:hover {
+            background: var(--bg-hover);
+        }
+
+        /* three dots ⋮ menu*/
+        .threedots-button {
+            display: flex;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            box-sizing: border-box;
+        }
+        .threedots-button {
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-surface);
+        }
+        .threedots-button:hover {
+            border: 1px solid var(--border-hover);
+            background: var(--bg-hover);
+        }
+        .threedots-value:checked ~ .threedots-button {
+            border: 1px solid var(--border-active);
+            background: var(--bg-active);
+        }
+        .threedots-value {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .threedots-value:checked ~ .dropdown-panel {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="dropdown-container">
+        <input type="checkbox" id="threedots-1" class="threedots-value" />
+        <label for="threedots-1" class="threedots-button">⋮</label>
+        <div class="dropdown-panel dir-left-down">
+            <div class="menu-container">
+                <button class="menu-item">View Details</button>
+                <button class="menu-item">Edit Sketch</button>
+                <button class="menu-item danger">Delete permanently</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="dropdown-container">
+        <input type="checkbox" id="threedots-2" class="threedots-value" />
+        <label for="threedots-2" class="threedots-button">⋮</label>
+        <div class="dropdown-panel dir-right-up">
+            <div class="menu-container">
+                <button class="menu-item">View Details</button>
+                <button class="menu-item">Edit Sketch</button>
+                <button class="menu-item danger">Delete permanently</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
