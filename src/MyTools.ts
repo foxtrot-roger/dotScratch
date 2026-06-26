@@ -2,19 +2,11 @@ import { MyIndexedDb } from './MyIndexedDb';
 import { SketchCanvas, SketchData } from './MyCanvas';
 
 export class UiManager {
-    private canvasEngine: SketchCanvas;
-
     // Tracking active properties locally inside the UI context
     public selectedThickness: number = 2;
     public selectedColor: string = '#000000';
 
-    constructor(canvasEngine: SketchCanvas) {
-        this.canvasEngine = canvasEngine;
-
-        // Sync initial defaults directly with the canvas engine properties
-        this.selectedThickness = canvasEngine.selectedThickness;
-        this.selectedColor = canvasEngine.selectedColor;
-    }
+    constructor(private canvasEngine: SketchCanvas) { }
 
     // --- 3. SKETCH ARCHIVE DOCUMENT LIST MANAGEMENT ---
     public async renderSketchList(): Promise<void> {

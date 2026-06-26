@@ -20,7 +20,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         const renderers = new CanvasRenderer();
         renderers.addRenderer(new LineRenderer2D());
 
-        const engine = new SketchCanvas(canvasElement, tools, renderers, async (updatedData) => {
+        const engine = new SketchCanvas(canvasElement, tools[0], renderers, async (updatedData) => {
             await MyIndexedDb.set('sketches', updatedData);
         });
 

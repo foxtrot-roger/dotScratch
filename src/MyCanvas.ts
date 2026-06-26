@@ -47,13 +47,7 @@ export class SketchCanvas implements ICanvasTransform {
     private offsetX: number = 0;
     private offsetY: number = 0;
 
-    // Active Strategy Tool
-    public activeTool: ITool | null = null;
-
     // Brush & Environment Settings (Passed via ToolProperties bundle)
-    public selectedColor: string = '#000000';
-    public selectedThickness: number = 2;
-    public isEraserMode: boolean = false;
     public fingerDrawEnabled: boolean = false;
 
     // State Tracking Flags
@@ -62,10 +56,8 @@ export class SketchCanvas implements ICanvasTransform {
     private isFingerPanning: boolean = false;
 
     // Pointer Coordinates Tracking
-    private startX: number = 0;
-    private startY: number = 0;
-    private fStartX: number = 0;
-    private fStartY: number = 0;
+    private panStartX: number = 0;
+    private panStartY: number = 0;
 
     // Multi-touch Zoom Cache Tracking
     private activePointers: PointerEvent[] = [];
@@ -73,14 +65,13 @@ export class SketchCanvas implements ICanvasTransform {
     private initialScale: number = 1.0;
     private initialWorldMid: IVector2D = { x: 0, y: 0 };
 
-
     // Structural Data Store Reference
     public currentSketchData: SketchData;
 
     // Callback to persist data to IndexedDB asynchronously
     private onSaveCallback?: (data: SketchData) => void;
 
-    constructor(canvasElement: HTMLCanvasElement, private tools: ITool[], public renderer: ICanvasRenderer, onSave?: (data: SketchData) => void) {
+    constructor(canvasElement: HTMLCanvasElement, public activeTool: ITool | null, public renderer: ICanvasRenderer, onSave?: (data: SketchData) => void) {
         this.canvas = canvasElement;
         const context = this.canvas.getContext('2d');
         if (!context) {
@@ -88,13 +79,6 @@ export class SketchCanvas implements ICanvasTransform {
         }
         this.ctx = context;
         this.onSaveCallback = onSave;
-
-        this.tools = tools;
-        if (tools && tools.length > 0) {
-            this.activeTool = tools[0];
-        } else {
-            this.activeTool = new Pencil() as unknown as ITool;
-        }
 
         this.initDefaultLifeCycle();
     }
@@ -240,177 +224,196 @@ export class SketchCanvas implements ICanvasTransform {
     private setupPointerEvents(): void {
         this.canvas.addEventListener('contextmenu', e => e.preventDefault());
 
-        this.canvas.addEventListener('pointerdown', (e: PointerEvent) => {
-            if (e.button === 2 || e.button === 1) {
-                this.isPanning = true;
-                this.startX = e.clientX;
-                this.startY = e.clientY;
-                this.canvas.setPointerCapture(e.pointerId);
-                return;
-            }
+        this.canvas.addEventListener('pointerdown', (e: PointerEvent) => this.handlePointerDown(e));
+        this.canvas.addEventListener('pointermove', (e: PointerEvent) => this.handlePointerMove(e));
 
-            e.preventDefault();
-            this.activePointers.push(e);
-
-            if (this.activePointers.length === 1 && !this.isDrawing) {
-                if (e.pointerType === 'touch' && !this.fingerDrawEnabled) {
-                    this.isFingerPanning = true;
-                    this.fStartX = e.clientX;
-                    this.fStartY = e.clientY;
-                    return;
-                }
-
-                this.isDrawing = true;
-                const wCoord = this.screenToWorld(e.clientX, e.clientY);
-                const currentPressure = (e.pointerType === 'mouse' && e.buttons === 1 && e.pressure === 0) ? 0.5 : (e.pressure || 0.5);
-
-                const pointPayload: Point = { x: wCoord.x, y: wCoord.y, pressure: currentPressure };
-
-                // DELEGATED TO ACTIVE TOOL
-                if (this.activeTool) {
-                    this.activeTool.pointerDown(this, this.currentSketchData, pointPayload, e);
-                }
-
-                this.renderCanvas();
-            }
-            else if (this.activePointers.length === 2) {
-                this.isDrawing = false;
-                this.isFingerPanning = false;
-
-                if (this.currentSketchData.lines.length > 0 && this.currentSketchData.lines[this.currentSketchData.lines.length - 1].points.length === 1) {
-                    this.currentSketchData.lines.pop();
-                }
-
-                this.initialDist = this.getDistance(this.activePointers[0], this.activePointers[1]);
-                this.initialScale = this.scale;
-
-                const screenMid = this.getMidpoint(this.activePointers[0], this.activePointers[1]);
-                const rect = this.canvas.getBoundingClientRect();
-                const canvasMidX = screenMid.x - rect.left;
-                const canvasMidY = screenMid.y - rect.top;
-
-                this.initialWorldMid = {
-                    x: (canvasMidX - this.offsetX) / this.scale,
-                    y: (canvasMidY - this.offsetY) / this.scale
-                };
-            }
-        });
-
-        this.canvas.addEventListener('pointermove', (e: PointerEvent) => {
-            e.preventDefault();
-
-            if (this.isPanning) {
-                this.offsetX += e.clientX - this.startX;
-                this.offsetY += e.clientY - this.startY;
-                this.startX = e.clientX;
-                this.startY = e.clientY;
-                this.renderCanvas();
-                return;
-            }
-
-            if (this.isFingerPanning && this.activePointers.length === 1) {
-                this.offsetX += e.clientX - this.fStartX;
-                this.offsetY += e.clientY - this.fStartY;
-                this.fStartX = e.clientX;
-                this.fStartY = e.clientY;
-                this.renderCanvas();
-                return;
-            }
-
-            const index = this.activePointers.findIndex(p => p.pointerId === e.pointerId);
-            if (index !== -1) this.activePointers[index] = e;
-
-            if (this.isDrawing && this.activePointers.length === 1) {
-                const wCoord = this.screenToWorld(e.clientX, e.clientY);
-                const currentPressure = (e.pointerType === 'mouse' && e.buttons === 1 && e.pressure === 0) ? 0.5 : (e.pressure || 0.5);
-
-                const pointPayload: Point = { x: wCoord.x, y: wCoord.y, pressure: currentPressure };
-
-                // DELEGATED TO ACTIVE TOOL
-                if (this.activeTool) {
-                    this.activeTool.pointerMove(this, this.currentSketchData, pointPayload, e);
-                }
-
-                this.renderCanvas();
-            }
-            else if (this.activePointers.length === 2) {
-                const currentDist = this.getDistance(this.activePointers[0], this.activePointers[1]);
-                const screenMid = this.getMidpoint(this.activePointers[0], this.activePointers[1]);
-
-                const rect = this.canvas.getBoundingClientRect();
-                const canvasMidX = screenMid.x - rect.left;
-                const canvasMidY = screenMid.y - rect.top;
-
-                const targetScale = this.initialScale * (currentDist / this.initialDist);
-                this.scale = Math.max(0.1, Math.min(targetScale, 15));
-
-                this.offsetX = canvasMidX - this.initialWorldMid.x * this.scale;
-                this.offsetY = canvasMidY - this.initialWorldMid.y * this.scale;
-
-                this.renderCanvas();
-            }
-        });
-
-        const handlePointerUp = (e: PointerEvent) => {
-            this.activePointers = this.activePointers.filter(p => p.pointerId !== e.pointerId);
-
-            if (this.isPanning) {
-                this.isPanning = false;
-                this.canvas.releasePointerCapture(e.pointerId);
-            }
-
-            if (this.activePointers.length < 1) {
-                this.isFingerPanning = false;
-            }
-
-            if (this.isDrawing) {
-                this.isDrawing = false;
-
-                const wCoord = this.screenToWorld(e.clientX, e.clientY);
-                const pointPayload: Point = { x: wCoord.x, y: wCoord.y, pressure: e.pressure || 0.5 };
-
-                // DELEGATED TO ACTIVE TOOL
-                if (this.activeTool) {
-                    this.activeTool.pointerUp(this, this.currentSketchData, pointPayload, e);
-                }
-
-                if (this.onSaveCallback) {
-                    this.onSaveCallback(this.currentSketchData);
-                }
-            }
-
-            if (this.activePointers.length < 2) {
-                this.initialDist = 0;
-            }
-            this.renderCanvas();
-        };
-
+        const handlePointerUp = (e: PointerEvent) => this.handlePointerUp(e);
         this.canvas.addEventListener('pointerup', handlePointerUp);
         this.canvas.addEventListener('pointercancel', handlePointerUp);
         this.canvas.addEventListener('pointerleave', handlePointerUp);
 
-        this.canvas.addEventListener('wheel', (e: WheelEvent) => {
-            e.preventDefault();
+        this.canvas.addEventListener('wheel', (e: WheelEvent) => this.handleWheel(e), { passive: false });
+    }
 
-            const rect = this.canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
+    private handlePointerDown(e: PointerEvent): void {
+        // 1. Right/Middle Click Panning
+        if (e.button === 2 || e.button === 1) {
+            this.isPanning = true;
+            this.panStartX = e.clientX;
+            this.panStartY = e.clientY;
+            this.canvas.setPointerCapture(e.pointerId);
+            return;
+        }
 
-            const worldX = (mouseX - this.offsetX) / this.scale;
-            const worldY = (mouseY - this.offsetY) / this.scale;
+        e.preventDefault();
+        this.activePointers.push(e);
 
-            const zoomIntensity = 0.1;
-            if (e.deltaY < 0) {
-                this.scale = Math.min(this.scale * (1 + zoomIntensity), 15);
-            } else {
-                this.scale = Math.max(this.scale * (1 - zoomIntensity), 0.1);
+        // 2. Single-Pointer Gestures (Draw or Pan)
+        if (this.activePointers.length === 1 && !this.isDrawing) {
+            if (e.pointerType === 'touch' && !this.fingerDrawEnabled) {
+                this.isFingerPanning = true;
+                this.panStartX = e.clientX;
+                this.panStartY = e.clientY;
+                return;
             }
 
-            this.offsetX = mouseX - worldX * this.scale;
-            this.offsetY = mouseY - worldY * this.scale;
-
+            this.isDrawing = true;
+            this.executeToolDown(e);
             this.renderCanvas();
-        }, { passive: false });
+        }
+        // 3. Multi-Touch Gestures (Pinch-to-Zoom)
+        else if (this.activePointers.length === 2) {
+            this.initPinchZoomState();
+        }
+    }
+
+    private handlePointerMove(e: PointerEvent): void {
+        e.preventDefault();
+
+        if (this.isPanning) {
+            this.updateMousePanning(e);
+            return;
+        }
+
+        if (this.isFingerPanning && this.activePointers.length === 1) {
+            this.updateFingerPanning(e);
+            return;
+        }
+
+        // Update tracking cache
+        const index = this.activePointers.findIndex(p => p.pointerId === e.pointerId);
+        if (index !== -1) this.activePointers[index] = e;
+
+        if (this.isDrawing && this.activePointers.length === 1) {
+            this.executeToolMove(e);
+            this.renderCanvas();
+        }
+        else if (this.activePointers.length === 2) {
+            this.updatePinchZoom();
+            this.renderCanvas();
+        }
+    }
+
+    private handlePointerUp(e: PointerEvent): void {
+        this.activePointers = this.activePointers.filter(p => p.pointerId !== e.pointerId);
+
+        if (this.isPanning) {
+            this.isPanning = false;
+            this.canvas.releasePointerCapture(e.pointerId);
+        }
+
+        if (this.activePointers.length < 1) {
+            this.isFingerPanning = false;
+        }
+
+        if (this.isDrawing) {
+            this.isDrawing = false;
+            this.executeToolUp(e);
+            if (this.onSaveCallback) this.onSaveCallback(this.currentSketchData);
+        }
+
+        if (this.activePointers.length < 2) {
+            this.initialDist = 0;
+        }
+        this.renderCanvas();
+    }
+
+    private handleWheel(e: WheelEvent): void {
+        e.preventDefault();
+
+        const rect = this.canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const worldX = (mouseX - this.offsetX) / this.scale;
+        const worldY = (mouseY - this.offsetY) / this.scale;
+
+        const zoomIntensity = 0.1;
+        this.scale = e.deltaY < 0
+            ? Math.min(this.scale * (1 + zoomIntensity), 15)
+            : Math.max(this.scale * (1 - zoomIntensity), 0.1);
+
+        this.offsetX = mouseX - worldX * this.scale;
+        this.offsetY = mouseY - worldY * this.scale;
+
+        this.renderCanvas();
+    }
+
+    // --- Extracted Helper Mechanics ---
+
+    private createPointPayload(e: PointerEvent): Point {
+        const wCoord = this.screenToWorld(e.clientX, e.clientY);
+        const currentPressure = (e.pointerType === 'mouse' && e.buttons === 1 && e.pressure === 0)
+            ? 0.5
+            : (e.pressure || 0.5);
+        return { x: wCoord.x, y: wCoord.y, pressure: currentPressure };
+    }
+
+    private initPinchZoomState(): void {
+        this.isDrawing = false;
+        this.isFingerPanning = false;
+
+        // Cleanup accidental single points caused by the first touch drop
+        const lines = this.currentSketchData.lines;
+        if (lines && lines.length > 0 && lines[lines.length - 1].points.length === 1) {
+            lines.pop();
+        }
+
+        this.initialDist = this.getDistance(this.activePointers[0], this.activePointers[1]);
+        this.initialScale = this.scale;
+
+        const screenMid = this.getMidpoint(this.activePointers[0], this.activePointers[1]);
+        const rect = this.canvas.getBoundingClientRect();
+
+        this.initialWorldMid = {
+            x: (screenMid.x - rect.left - this.offsetX) / this.scale,
+            y: (screenMid.y - rect.top - this.offsetY) / this.scale
+        };
+    }
+
+    private updatePinchZoom(): void {
+        const currentDist = this.getDistance(this.activePointers[0], this.activePointers[1]);
+        const screenMid = this.getMidpoint(this.activePointers[0], this.activePointers[1]);
+        const rect = this.canvas.getBoundingClientRect();
+        const canvasMidX = screenMid.x - rect.left;
+        const canvasMidY = screenMid.y - rect.top;
+
+        const targetScale = this.initialScale * (currentDist / this.initialDist);
+        this.scale = Math.max(0.1, Math.min(targetScale, 15));
+
+        this.offsetX = canvasMidX - this.initialWorldMid.x * this.scale;
+        this.offsetY = canvasMidY - this.initialWorldMid.y * this.scale;
+    }
+
+    private updateMousePanning(e: PointerEvent): void {
+        this.offsetX += e.clientX - this.panStartX;
+        this.offsetY += e.clientY - this.panStartY;
+        this.panStartX = e.clientX;
+        this.panStartY = e.clientY;
+        this.renderCanvas();
+    }
+
+    private updateFingerPanning(e: PointerEvent): void {
+        this.offsetX += e.clientX - this.panStartX;
+        this.offsetY += e.clientY - this.panStartY;
+        this.panStartX = e.clientX;
+        this.panStartY = e.clientY;
+        this.renderCanvas();
+    }
+
+    private executeToolDown(e: PointerEvent): void {
+        if (!this.activeTool) return;
+        this.activeTool.pointerDown(this, this.currentSketchData, this.createPointPayload(e), e);
+    }
+
+    private executeToolMove(e: PointerEvent): void {
+        if (!this.activeTool) return;
+        this.activeTool.pointerMove(this, this.currentSketchData, this.createPointPayload(e), e);
+    }
+
+    private executeToolUp(e: PointerEvent): void {
+        if (!this.activeTool) return;
+        this.activeTool.pointerUp(this, this.currentSketchData, this.createPointPayload(e), e);
     }
 
     public resizeCanvas(): void {
