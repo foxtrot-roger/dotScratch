@@ -12,11 +12,12 @@ export class Line2D implements ICanvasObject {
         Object.assign(this, init);
     }
 }
-export class LinePoint2D {
+export interface LinePoint2D {
     x: number;
     y: number;
     pressure: number;
 }
+
 export class LineRenderer2D implements ICanvasRenderer {
     static RENDERER_KEY: string = "LineRenderer2D";
     get rendererKey(): string { return LineRenderer2D.RENDERER_KEY };
