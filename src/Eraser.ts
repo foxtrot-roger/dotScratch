@@ -1,5 +1,6 @@
-﻿import { SketchCanvas, ITool, IToolProperties, Line, SketchData, Point } from "./MyCanvas";
+﻿import { SketchCanvas, ITool, IToolProperties, SketchData, Point } from "./MyCanvas";
 import { Editable } from "./bindings";
+import { Line2D } from "./renderers-line";
 
 export class Eraser implements ITool {
     public name = 'eraser';
@@ -13,8 +14,6 @@ export class Eraser implements ITool {
         this.editable.setEditor('thickness', 'thickness');
     }
 
-    async render(properties: IToolProperties, canvas: SketchCanvas, line: Line): Promise<void> { }
-
     public pointerDown(canvas: SketchCanvas, sketch: SketchData, point: Point, event: PointerEvent): void {
         this.eraseLinesAt(point, this.properties.thickness, canvas, sketch);
     }
@@ -27,11 +26,11 @@ export class Eraser implements ITool {
     }
 
     private eraseLinesAt(position: Point, eraseRadius: number, canvas: SketchCanvas, sketch: SketchData): void {
-        if (!sketch || !sketch.lines) return;
+        if (!sketch || !sketch.objects) return;
 
         const currentScale = canvas.getScale();
 
-        sketch.lines = sketch.lines.filter((line: Line) => {
+        sketch.objects = sketch.objects.filter((line: Line2D) => {
             const isHit: boolean = line.points.some((pt: Point) => {
                 const dx: number = pt.x - position.x;
                 const dy: number = pt.y - position.y;

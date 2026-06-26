@@ -33,8 +33,6 @@ export interface ITool {
 
     editable: IEditable;
 
-    render(properties: IToolProperties, canvas: SketchCanvas, line: Line): Promise<void>;
-
     pointerDown(canvas: SketchCanvas, sketch: SketchData, point: Point, event: PointerEvent): void;
     pointerUp(canvas: SketchCanvas, sketch: SketchData, point: Point, event: PointerEvent): void;
     pointerMove(canvas: SketchCanvas, sketch: SketchData, point: Point, event: PointerEvent): void;
@@ -109,23 +107,12 @@ export class SketchCanvas implements ICanvasTransform {
 
     private initDefaultLifeCycle(): void {
         this.setupPointerEvents();
+
         window.addEventListener('resize', () => this.resizeCanvas());
         this.resizeCanvas();
     }
 
-    // --- Helper to pack current UI environment states into the tool context ---
-    public getToolProperties(): IToolProperties {
-        if (!this.activeTool) {
-            return { color: '#000000', thickness: 2, isEraserMode: false };
-        }
-        return {
-            ...this.activeTool.properties,
-            isEraserMode: this.isEraserMode
-        };
-    }
-
     // --- Screen Vector Mapping Functions ---
-
     private screenToWorld(x: number, y: number): IVector2D {
         const rect = this.canvas.getBoundingClientRect();
         const canvasX = x - rect.left;
@@ -153,18 +140,6 @@ export class SketchCanvas implements ICanvasTransform {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         this.drawGrid();
-
-        if (!this.currentSketchData || !this.currentSketchData.lines) return;
-
-        this.currentSketchData.lines.forEach(line => {
-            const lineToolName = line.tool || "pencil";
-            const lineTool = this.tools.find(tool => tool.name == lineToolName);
-            if (lineTool) {
-                if (line.points.length < 1) return;
-
-                lineTool!.render(line.properties, this, line);
-            }
-        });
 
         if (this.currentSketchData && this.currentSketchData.objects)
             this.currentSketchData.objects.forEach(line => {
@@ -255,7 +230,6 @@ export class SketchCanvas implements ICanvasTransform {
     private getDistance(p1: PointerEvent, p2: PointerEvent): number {
         return Math.hypot(p1.clientX - p2.clientX, p1.clientY - p2.clientY);
     }
-
     private getMidpoint(p1: PointerEvent, p2: PointerEvent): IVector2D {
         return {
             x: (p1.clientX + p2.clientX) / 2,
@@ -454,5 +428,3 @@ export class SketchCanvas implements ICanvasTransform {
         this.renderCanvas();
     }
 }
-
-
