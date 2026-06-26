@@ -48,7 +48,6 @@ export class SketchCanvas implements ICanvasTransform {
     private offsetY: number = 0;
 
     // Active Strategy Tool
-    private tools: ITool[];
     public activeTool: ITool | null = null;
 
     // Brush & Environment Settings (Passed via ToolProperties bundle)
@@ -81,7 +80,7 @@ export class SketchCanvas implements ICanvasTransform {
     // Callback to persist data to IndexedDB asynchronously
     private onSaveCallback?: (data: SketchData) => void;
 
-    constructor(canvasElement: HTMLCanvasElement, tools: ITool[], public renderer: ICanvasRenderer, onSave?: (data: SketchData) => void) {
+    constructor(canvasElement: HTMLCanvasElement, private tools: ITool[], public renderer: ICanvasRenderer, onSave?: (data: SketchData) => void) {
         this.canvas = canvasElement;
         const context = this.canvas.getContext('2d');
         if (!context) {

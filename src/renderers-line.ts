@@ -1,13 +1,14 @@
 import { ICanvasTransform, ICanvasObject, ICanvasRenderer } from "./renderers";
 
 export class Line2D implements ICanvasObject {
+
     renderer: string;
     thickness: number;
     color: string;
     points: LinePoint2D[];
 
     constructor(init?: Partial<Line2D>) {
-        this.renderer = LineRenderer2D.name;
+        this.renderer = LineRenderer2D.RENDERER_KEY;
         Object.assign(this, init);
     }
 }
@@ -17,6 +18,9 @@ export class LinePoint2D {
     pressure: number;
 }
 export class LineRenderer2D implements ICanvasRenderer {
+    static RENDERER_KEY: string = "LineRenderer2D";
+    get rendererKey(): string { return LineRenderer2D.RENDERER_KEY };
+
     public render(canvas: CanvasRenderingContext2D, transform: ICanvasTransform, data: ICanvasObject): void {
         const line = data as Line2D;
 

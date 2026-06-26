@@ -18,7 +18,8 @@ window.addEventListener('DOMContentLoaded', async () => {
         const tools: ITool[] = [new Pencil(), new Eraser()];
 
         const renderers = new CanvasRenderer();
-        renderers.renderers.set(LineRenderer2D.name, new LineRenderer2D());
+        renderers.addRenderer(new LineRenderer2D());
+
         const engine = new SketchCanvas(canvasElement, tools, renderers, async (updatedData) => {
             await MyIndexedDb.set('sketches', updatedData);
         });

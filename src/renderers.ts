@@ -37,10 +37,17 @@ export interface ICanvasObject {
     renderer: string;
 }
 export interface ICanvasRenderer {
+    get rendererKey();
     render(canvas: CanvasRenderingContext2D, transform: ICanvasTransform, data: ICanvasObject): void;
 }
 export class CanvasRenderer implements ICanvasRenderer {
     constructor(public renderers: Map<string, ICanvasRenderer> = new Map<string, ICanvasRenderer>()) { }
+    get rendererKey(): string { return "CanvasRenderer" };
+
+    public addRenderer(renderer: ICanvasRenderer) {
+        this.renderers.set(renderer.rendererKey, renderer);
+    }
+
     render(canvas: CanvasRenderingContext2D, transform: ICanvasTransform, data: ICanvasObject): void {
         if (!data.renderer) data.renderer = LineRenderer2D.name;
 
