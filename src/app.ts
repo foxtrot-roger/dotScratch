@@ -5,6 +5,8 @@ import { Pencil } from './Pencil';
 import { Eraser } from './Eraser';
 import { ToolBarManager } from './MyToolMenu';
 import { Observable, IEditable } from './bindings';
+import { CanvasRenderer } from './renderers';
+import { LineRenderer2D } from './renderers-line';
 
 window.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -15,7 +17,9 @@ window.addEventListener('DOMContentLoaded', async () => {
         const canvasElement = document.getElementById('sketchCanvas') as HTMLCanvasElement;
         const tools: ITool[] = [new Pencil(), new Eraser()];
 
-        const engine = new SketchCanvas(canvasElement, tools, async (updatedData) => {
+        const renderers = new CanvasRenderer();
+        renderers.renderers.set(LineRenderer2D.name, new LineRenderer2D());
+        const engine = new SketchCanvas(canvasElement, tools, renderers, async (updatedData) => {
             await MyIndexedDb.set('sketches', updatedData);
         });
 

@@ -1,5 +1,6 @@
 import { Pencil } from "./Pencil";
 import { IEditable } from "./bindings";
+import { ICanvasObject, ICanvasRenderer, ICanvasTransform, IVector2D, Vector2D } from "./renderers";
 
 export interface Point {
     x: number;
@@ -17,11 +18,7 @@ export interface SketchData {
     id: string | number;
     name: string;
     lines: Line[];
-}
-
-export interface IVector2D {
-    x: number;
-    y: number;
+    objects: ICanvasObject[];
 }
 
 export interface IToolProperties {
@@ -43,7 +40,7 @@ export interface ITool {
     pointerMove(canvas: SketchCanvas, sketch: SketchData, point: Point, event: PointerEvent): void;
 }
 
-export class SketchCanvas {
+export class SketchCanvas implements ICanvasTransform {
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
 
@@ -86,7 +83,7 @@ export class SketchCanvas {
     // Callback to persist data to IndexedDB asynchronously
     private onSaveCallback?: (data: SketchData) => void;
 
-    constructor(canvasElement: HTMLCanvasElement, tools: ITool[], onSave?: (data: SketchData) => void) {
+    constructor(canvasElement: HTMLCanvasElement, tools: ITool[], public renderer: ICanvasRenderer, onSave?: (data: SketchData) => void) {
         this.canvas = canvasElement;
         const context = this.canvas.getContext('2d');
         if (!context) {
@@ -168,6 +165,11 @@ export class SketchCanvas {
                 lineTool!.render(line.properties, this, line);
             }
         });
+
+        if (this.currentSketchData && this.currentSketchData.objects)
+            this.currentSketchData.objects.forEach(line => {
+                this.renderer.render(this.ctx, this, line);
+            });
 
         const statsElement = document.getElementById('canvas-stats');
         if (statsElement) {
@@ -454,26 +456,3 @@ export class SketchCanvas {
 }
 
 
-export class Vector2D implements IVector2D {
-    constructor(public x: number, public y: number) { }
-
-    public static get ZERO() { return new Vector2D(0, 0); }
-    public static get ONE() { return new Vector2D(1, 1); }
-}
-
-export class Transform {
-    constructor(public position: IVector2D = { x: 0, y: 0 }, public scale: IVector2D = { x: 1, y: 1 }) { }
-
-    public toGlobal(local: IVector2D) {
-        return {
-            x: (local.x * this.scale.x) + this.position.x,
-            y: (local.y * this.scale.y) + this.position.y
-        };
-    }
-    public toLocal(global: IVector2D) {
-        return {
-            x: (global.x - this.position.x) / this.scale.x,
-            y: (global.y - this.position.y) / this.scale.y
-        };
-    }
-}
